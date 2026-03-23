@@ -14,6 +14,7 @@ async function bootstrap() {
   app.setViewEngine('ejs');
 
   app.useGlobalPipes(new ValidationPipe());
+
   await app.listen(configService.get<string>('PORT'));
 }
 bootstrap();
