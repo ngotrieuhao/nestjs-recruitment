@@ -12,7 +12,8 @@ import {
 import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
-import { ResponseMessage } from 'src/decorator/customize';
+import { ResponseMessage, User } from 'src/decorator/customize';
+import { IUser } from 'src/users/user.interface';
 
 @Controller('jobs')
 export class JobsController {
@@ -20,8 +21,8 @@ export class JobsController {
 
   @ResponseMessage('Create a job')
   @Post()
-  create(@Body() createJobDto: CreateJobDto) {
-    return this.jobsService.create(createJobDto);
+  create(@Body() createJobDto: CreateJobDto, @User() user: IUser) {
+    return this.jobsService.create(createJobDto, user);
   }
 
   @ResponseMessage('Fetch job with paginate')
@@ -42,13 +43,17 @@ export class JobsController {
 
   @ResponseMessage('Update a job')
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateJobDto: UpdateJobDto) {
-    return this.jobsService.update(id, updateJobDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateJobDto: UpdateJobDto,
+    @User() user: IUser,
+  ) {
+    return this.jobsService.update(id, updateJobDto, user);
   }
 
   @ResponseMessage('Delete a job')
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.jobsService.remove(id);
+  remove(@Param('id') id: string, @User() user: IUser) {
+    return this.jobsService.remove(id, user);
   }
 }

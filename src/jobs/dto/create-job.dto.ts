@@ -1,8 +1,12 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
+  IsArray,
+  IsBoolean,
+  IsDate,
   IsNotEmpty,
   IsNotEmptyObject,
   IsObject,
+  IsString,
   ValidateNested,
 } from 'class-validator';
 import mongoose from 'mongoose';
@@ -19,7 +23,9 @@ export class CreateJobDto {
   @IsNotEmpty()
   name: string;
 
+  @IsArray()
   @IsNotEmpty()
+  @IsString({ each: true })
   skills: string;
 
   @IsNotEmpty()
@@ -38,10 +44,18 @@ export class CreateJobDto {
   description: string;
 
   @IsNotEmpty()
+  @Transform(({ value }) => new Date(value))
+  @IsDate()
   startDate: string;
 
   @IsNotEmpty()
+  @Transform(({ value }) => new Date(value))
+  @IsDate()
   endDate: string;
+
+  @IsNotEmpty()
+  @IsBoolean()
+  isActive: boolean;
 
   @IsNotEmptyObject()
   @IsObject()

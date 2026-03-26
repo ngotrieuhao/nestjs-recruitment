@@ -5,6 +5,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { Job, JobDocument } from './schemas/job.schema';
 import aqp from 'api-query-params';
+import { IUser } from 'src/users/user.interface';
+import mongoose from 'mongoose';
 
 @Injectable()
 export class JobsService {
@@ -13,10 +15,18 @@ export class JobsService {
     private jobModel: SoftDeleteModel<JobDocument>,
   ) {}
 
-  create(createJobDto: CreateJobDto) {
-    return this.jobModel.create({
-      ...createJobDto,
-    });
+  create(createJobDto: CreateJobDto, user: IUser) {
+    return this.jobModel.create(
+      {
+        ...createJobDto,
+      },
+      {
+        createdBy: {
+          _id: user._id,
+          email: user.email,
+        },
+      },
+    );
   }
 
   async findAll(currentPage: number, limit: number, qs: string) {
@@ -50,23 +60,41 @@ export class JobsService {
   }
 
   findOne(id: string) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return `not found job`;
     return this.jobModel.findOne({
       _id: id,
     });
   }
 
-  update(id: string, updateJobDto: UpdateJobDto) {
-    return this.jobModel.updateOne(
+  async update(id: string, updateJobDto: UpdateJobDto, user: IUser) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return `not found job`;
+    return await this.jobModel.updateOne(
       {
         _id: id,
       },
       {
         ...updateJobDto,
+        updatedBy: {
+          _id: user._id,
+          email: user.email,
+        },
       },
     );
   }
 
-  remove(id: string) {
+  async remove(id: string, user: IUser) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return `not found job`;
+    await this.jobModel.updateOne(
+      {
+        _id: id,
+      },
+      {
+        deletedBy: {
+          _id: user._id,
+          email: user.email,
+        },
+      },
+    );
     return this.jobModel.softDelete({ _id: id });
   }
 }
