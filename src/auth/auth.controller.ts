@@ -9,11 +9,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { Public, ResponseMessage } from 'src/decorator/customize';
+import { Public, ResponseMessage, User } from 'src/decorator/customize';
 import { LocalAuthGuard } from './local-auth.guard';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RegisterUserDto } from 'src/users/dto/create-user.dto';
-import { Response } from 'express';
+import { Request as RequestE, Response } from 'express';
+import { IUser } from 'src/users/user.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -35,8 +36,34 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('profile')
+  @Get('/profile')
   getProfile(@Request() req) {
     return req.user;
+  }
+
+  @ResponseMessage('Get User Information')
+  @Get('/account')
+  handleGetAccount(@User() user: IUser) {
+    return { user };
+  }
+
+  @Public()
+  @ResponseMessage('Refresh Token')
+  @Get('/refresh')
+  handleRefreshToken(
+    @Req() request: RequestE,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const refresh_token = request.cookies['refresh_token'];
+    return this.authService.processNewToken(refresh_token, response);
+  }
+
+  @ResponseMessage('Logout user')
+  @Post('/logout')
+  handleLogout(
+    @Res({ passthrough: true }) response: Response,
+    @User() user: IUser,
+  ) {
+    return this.authService.logout(response, user);
   }
 }

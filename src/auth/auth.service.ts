@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { IUser } from 'src/users/user.interface';
@@ -38,6 +38,7 @@ export class AuthService {
 
     const refreshToken = this.createRefreshToken(payload);
     await this.usersService.updateUserToken(refreshToken, _id);
+
     response.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       maxAge: ms(this.configService.get<string>('JWT_REFRESH_EXPIRE')),
@@ -67,5 +68,53 @@ export class AuthService {
         ms(this.configService.get<string>('JWT_REFRESH_EXPIRE')) / 1000,
     });
     return refresh_token;
+  };
+
+  processNewToken = async (refreshToken: string, response: Response) => {
+    try {
+      this.jwtService.verify(refreshToken, {
+        secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
+      });
+      const user = await this.usersService.findUserByToken(refreshToken);
+      if (user) {
+        const { _id, email, name, role } = user;
+        const payload = {
+          sub: 'token refresh',
+          iss: 'from server',
+          _id,
+          name,
+          email,
+          role,
+        };
+
+        const refreshToken = this.createRefreshToken(payload);
+        await this.usersService.updateUserToken(refreshToken, _id.toString());
+        // Clear cookie
+        response.clearCookie('refresh_token');
+        // Set cookie
+        response.cookie('refresh_token', refreshToken, {
+          httpOnly: true,
+          maxAge: ms(this.configService.get<string>('JWT_REFRESH_EXPIRE')),
+        });
+
+        return {
+          access_token: this.jwtService.sign(payload),
+          _id,
+          email,
+          name,
+          role,
+        };
+      } else {
+        throw new BadRequestException('Not have user');
+      }
+    } catch (error) {
+      throw new BadRequestException(`Refresh Token is invalid`);
+    }
+  };
+
+  logout = async (response: Response, user: IUser) => {
+    await this.usersService.updateUserToken('', user._id);
+    response.clearCookie('refresh_token');
+    return 'ok';
   };
 }
