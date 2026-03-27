@@ -17,6 +17,9 @@ class Company {
 
   @IsNotEmpty()
   name: string;
+
+  @IsNotEmpty()
+  location: string;
 }
 
 export class CreateJobDto {
