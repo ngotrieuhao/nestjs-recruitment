@@ -10,7 +10,9 @@ import {
   SubscriberDocument,
 } from 'src/subscribers/schemas/subscriber.schema';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('mail')
 @Controller('mail')
 export class MailController {
   constructor(
